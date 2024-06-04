@@ -7,6 +7,7 @@ class Node:
         self.is_leaf = is_leaf
         self.keys = []
         self.children = []
+        self.parent = None
 
 # B+ Tree class
 class BPlusTree:
@@ -87,8 +88,41 @@ class BPlusTree:
             node_r = Node()
             node_r.keys = [k_t]
             node_r.children = [node, node_t]
+            node.parent = node_r
+            node_t.parent = node_r
             self.root = node_r
+            return
         
+        node_p = node.parent
+        if len(node_p.children) < self.order:
+            index = node_p.children.index(node)
+            node_p.children.insert(index+1, node_t)
+            node_t.parent = node_p
+            node_p.keys.insert(index, k_t)
+        else:
+            print(f"Not implemented yet! {node_p==None}")
+            temp = self.__get_copy_temp(node_p)
+            index = temp.children.index(node)
+            temp.children.insert(index+1, node_t)
+            temp.keys.insert(index, k_t)
+
+            node_p.keys.clear()
+            node_p.children.clear()
+            node_p_t = Node()
+            border = int(math.ceil((self.order+1)/2))
+            node_p.keys = temp.keys[:border]
+            node_p.children = temp.children[:border]
+            k_tt = node_p.keys[-1]
+            node_p_t.keys = temp.keys[border:]
+            node_p_t.children = temp.children[border:]
+
+            if index+1<border:
+                node_t.parent = node_p
+            else:
+                node_t.parent = node_p_t
+
+            self.__insert_in_parent(node_p, k_tt, node_p_t)
+
 
     def print_tree(self):
         nodes = [(0, self.root)]
@@ -102,18 +136,7 @@ class BPlusTree:
             nodes += [(level+1, node.children[i]) for i in range(len(node.children))]
             last_level = level
             
-
-tree = BPlusTree(6)
-tree.insert(1)
-print(tree.root.keys)
-tree.insert(3)
-print(tree.root.keys)
-tree.insert(5)
-print(tree.root.keys)
-tree.insert(4)
-print(tree.root.keys)
-tree.insert(2)
-print(tree.root.keys)
-tree.insert(8)
-
+tree = BPlusTree(4)
+for i in range(1, 30):
+    tree.insert(i)
 tree.print_tree()
