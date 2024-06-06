@@ -153,23 +153,33 @@ class BPlusTree:
                 return parent
         return None
 
-    def delete(self, key):
+    def delete(self, key, pointer):
         leaf = self.__find_leaf(key)
-        self.__delete_entry(leaf, key)
+        self.__delete_entry(leaf, key, pointer)
 
-    def __delete_entry(self, node, key, pointer=None):
+    def __delete_entry(self, node, key, pointer):
         node.keys.remove(key)
-        if pointer != None:
-            node.pointers.remove(pointer)
+        node.pointers.remove(pointer)
 
         if node == self.root and len(node.pointers) == 1:
             self.root = node.pointers[0]
-            self.root.parent = None
+            #self.root.parent = None
             del node
+        elif len(node.pointers) < int(math.ceil(self.order/2)):     # check the condtion(does it work for leaves?)
+            pass
+
+    def __get_sibling(self, node):
+        parent = self.__find_parent(node) # we are sure the node is not the root
+        index = parent.children.index(node)
+        if index > 0:
+            return parent.children[index-1]
+        else:
+            return parent.children[index+1]
         
 
-    def print_tree(self):
+    def print_tree(self, debugLeaves = False):
         nodes = [(0, self.root)]
+        leaves = []
 
         last_level = 0
         while len(nodes) != 0:
@@ -179,11 +189,17 @@ class BPlusTree:
             print(node.keys,end=' ')
             if not(node.is_leaf):
                 nodes += [(level+1, node.pointers[i]) for i in range(len(node.pointers))]
+            else:
+                leaves += node.pointers
             last_level = level
+
+        print()
+        if debugLeaves:
+            print(leaves)
             
 tree = BPlusTree(4)
 for i in range(1, 30):
     tree.insert(i, f"value{i}")
-tree.print_tree()
+tree.print_tree(debugLeaves=True)
 print()
 print(tree.parent(tree.root.pointers[0].pointers[-1]).keys)
