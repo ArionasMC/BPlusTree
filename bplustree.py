@@ -13,6 +13,9 @@ class Node:
         self.pointers = []
         #self.parent = None
 
+    def __repr__(self):
+        return f"Node({self.keys})"
+
 # B+ Tree class
 class BPlusTree:
     def __init__(self, order):
@@ -56,7 +59,21 @@ class BPlusTree:
             leaf_t = Node(is_leaf=True)
             temp = self.__get_copy_temp(leaf)
             self.__insert_in_leaf(temp, key, pointer)
-            
+            print(f"temp={temp},{temp.pointers}")
+
+            leaf_t.pointers.append(leaf.pointers[-1])
+            leaf.pointers = [leaf_t]
+            leaf.keys.clear()
+
+            border = int(math.ceil(self.order/2))
+            leaf.keys = temp.keys[:border]
+            leaf.pointers = temp.pointers[:border] + leaf.pointers
+
+            leaf_t.keys = temp.keys[border:]
+            leaf_t.pointers += temp.pointers[border:]   # changed this from book
+            #leaf_t.pointers = temp.pointers[border:]+leaf_t.pointers
+            print(f"leaf={leaf},{leaf.pointers},leaf_t={leaf_t},{leaf_t.pointers}")
+            '''
             lpn = leaf.pointers[-1]
             leaf.keys.clear()
             leaf.pointers.clear()
@@ -69,7 +86,7 @@ class BPlusTree:
             leaf_t.keys = temp.keys[border:]
             leaf_t.pointers = temp.pointers[border:]
             leaf_t.pointers.append(lpn)                # L'.Pn = L.Pn
-
+            '''
             #print(f"leaf={leaf.keys}")
             #print(f"leaf_t={leaf_t.keys}")
             k_t = leaf_t.keys[0] 
@@ -79,17 +96,28 @@ class BPlusTree:
     def __get_copy_temp(self, node, full=False):
         temp = Node(is_leaf= node.is_leaf)
         c = 0 if full else 1
+        temp.keys = node.keys[:]
+        temp.pointers = node.pointers[:len(node.pointers)-c]
+        '''
         for i in range(len(node.keys)):
             temp.keys.append(node.keys[i])
         for i in range(len(node.pointers)-c): # algo says until Kn-1 no Pn
             temp.pointers.append(node.pointers[i])
+        '''
         return temp
 
     def __insert_in_leaf(self, leaf, key, pointer):
-        if len(leaf.keys) == 0 or key < leaf.keys[0]:
+        if leaf == self.root and len(leaf.keys) == 0:
+            leaf.keys = [key]
+            leaf.pointers = [pointer]
+            return
+
+        if key < leaf.keys[0]:
             leaf.keys.insert(0, key)
             leaf.pointers.insert(0, pointer)
         else:
+            self.__add_key_pointer(leaf, key, pointer)
+            '''
             pos = 0
             for i in range(len(leaf.keys)):
                 if leaf.keys[i] > key:
@@ -97,6 +125,7 @@ class BPlusTree:
                 pos+=1
             leaf.keys.insert(pos, key)
             leaf.pointers.insert(pos, pointer) # test this line
+            '''
 
     def __insert_in_parent(self, node, k_t, node_t):
         if node == self.root:
@@ -161,6 +190,75 @@ class BPlusTree:
         leaf = self.__find_leaf(key)
         self.__delete_entry(leaf, key, pointer)
 
+    def __merge(self, node_t, node, k_t):
+        print(f"before merge{node.is_leaf}: n_t={node_t}:{node_t.pointers}, n={node}:{node.pointers}")
+        if not(node.is_leaf): # edo gamietai arketa
+            print(f"gamietai me {k_t}")
+            self.__add_only_key(node_t, k_t)
+            node_t.pointers.insert(node_t.keys.index(k_t)+1, node.pointers[-1])
+            for i in range(0, len(node.keys)):
+                self.__add_key_pointer(node_t, node.keys[i], node.pointers[i])
+
+            #node_t.pointers.append(node.pointers[-1])
+        else: # edo gamietai ligotero
+            #for i in range(0, len(node.keys)):
+            #    self.__add_key_pointer(node_t, node.keys[i], node.pointers[i])
+            self.__merge_leaf_nodes(node_t, node)
+            print(f"nt1={node_t.pointers}")
+            node_t.pointers[-1] = node.pointers[-1]
+            
+
+            # for right edge because there is no pointer, not even None we have to fix this
+            if self.__is_right_edge(node):
+                print("[RIGHT EDGE] Got you!")
+                node_t.pointers.pop()
+
+            print(f"nt2={node_t.pointers}")
+            #if 27 in node.keys: 
+            #    print(f"gamiese {node},{node.pointers}-> {node_t},{node_t.pointers}")
+        print(f"after merge: {node_t}:{node_t.pointers}")
+    
+    def __is_right_edge(self, node):
+        cur = self.root
+        while not(cur.is_leaf):
+            cur = cur.pointers[-1]
+        return cur == node
+
+    def __merge_leaf_nodes(self, node_t, node):
+        index = 0
+        while index < len(node_t.keys):
+            if node_t.keys[index] > node.keys[0]:
+                break
+            index+=1
+        for i in range(0, len(node.keys)):
+            node_t.keys.insert(index+i, node.keys[i])
+            node_t.pointers.insert(index+i, node.pointers[i])
+        
+    
+    def __add_only_key(self, node, key):
+        i = 0
+        while i < len(node.keys):
+            if node.keys[i] > key:
+                node.keys.insert(i, key)
+                return
+            i += 1
+        node.keys.append(key)
+
+    def __add_key_pointer(self, node, key, pointer):
+        i = 0
+        while i < len(node.keys):
+            if node.keys[i] > key:
+                node.keys.insert(i, key)
+                node.pointers.insert(i, pointer)
+                return
+            i+=1
+        node.keys.append(key)
+        #if not(node.is_leaf):
+        node.pointers.append(pointer)
+        #else:
+        #    pos = len(node.pointers)-1
+        #    node.pointers.insert(pos, pointer)
+
     def __delete_entry(self, node, key, pointer):
         #print(node.keys)
         node.keys.remove(key)
@@ -184,8 +282,17 @@ class BPlusTree:
             if len(node.keys)+len(node_t.keys) <= self.order-1:
                 # merging 
                 if self.is_pred(node, node_t):
+                    print(f"swapping: {node},{node.pointers} <-> {node_t},{node_t.pointers}")
                     node, node_t = node_t, node
+                    print("=====[Swapped]=====")
+                    print(f"node: {node}, {node.pointers}")
+                    print(f"node_t: {node_t}, {node_t.pointers}")
+                    print("===================")
 
+                self.__merge(node_t, node, k_t)
+
+                # start of code with issues
+                '''
                 i = parent.pointers.index(node)
                 i_t = parent.pointers.index(node_t)
                 if not(node.is_leaf):
@@ -205,12 +312,14 @@ class BPlusTree:
                     else:
                         node_t.keys += node.keys
                         node_t.pointers += node.pointers
-
-                self.__delete_entry(parent, k_t, node)
+                '''
+                # end of code with issues (???)
+                self.__delete_entry(self.parent(node), k_t, node)
                 del node
             else:
                 # borrowing
-                if self.is_pred(node_t, node):
+                if self.is_pred(node_t, node): # borrow from left
+                    print(f"borrowing from right: n={node}:{node.pointers}, n_t={node_t}:{node_t.pointers}")
                     if not(node.is_leaf) and not(node == self.root):
                         node_t.keys.pop()
                         m = node_t.pointers.pop()
@@ -227,10 +336,26 @@ class BPlusTree:
                         node.pointers.insert(0, m_pointer)
 
                         parent.keys[parent.keys.index(k_t)] = m_key
-                else:
-                    print(f"Not implemented yet! (symmetric) n={node.keys}, n_t={node_t.keys}")
+                else: # borrow from right
+                    #print(f"Not implemented yet! (symmetric) n={node.keys}, n_t={node_t.keys}")
+                    print(f"borrowing from left: n={node}:{node.pointers}, n_t={node_t}:{node_t.pointers}")
+                    if not(node.is_leaf) and not(node == self.root):
+                        node_t.keys.pop(0)
+                        m = node_t.pointers.pop(0)
 
+                        node.keys.append(k_t)
+                        node.pointers.append(m)
 
+                        parent.keys[parent.keys.index(k_t)] =  node_t.keys[0]
+                    else:
+                        m_key = node_t.keys.pop(0)
+                        m_pointer = node_t.pointers.pop(0)
+
+                        node.keys.append(m_key)
+                        node.pointers.append(m_pointer)
+
+                        parent.keys[parent.keys.index(k_t)] = node_t.keys[0]
+        
     def is_pred(self, node, node_t):
         """
         Returns True if `node` is the predecessor of `node_t`.
@@ -273,16 +398,19 @@ class BPlusTree:
             return parent.pointers[index+1], False
         
 
-    def print_tree(self, debugLeaves = False):
+    def print_tree(self, debugLeaves = False, showPointers = False):
         nodes = [(0, self.root)]
         leaves = []
-
+        print("=====[Tree]=====")
         last_level = 0
         while len(nodes) != 0:
             (level, node) = nodes.pop(0)
             if last_level != level:
                 print()
-            print(node.keys,end=' ')
+            if not(showPointers):
+                print(node.keys,end=' ')
+            else:
+                print(node, node.pointers, end=' ')
             if not(node.is_leaf):
                 nodes += [(level+1, node.pointers[i]) for i in range(len(node.pointers))]
             else:
@@ -295,30 +423,42 @@ class BPlusTree:
 
 if __name__ == '__main__':      
     tree = BPlusTree(4)
-    for i in range(1, 29):
+    nodes = 29
+    for i in range(1, nodes):
         tree.insert(i, f"value{i}")
     tree.print_tree(debugLeaves=False)
+
+    for i in range(1, nodes):
+        print(tree.test_find(i).pointers)
+    print("---> 27 pointers:",tree.test_find(27).pointers)
+    tree.delete(26, "value26")
+    
+    tree.print_tree()
 
     #print(tree.test_find(13).keys)
     #node = tree.root.pointers[0].pointers[1]
     #print(node.keys)
-    print(tree.root.pointers[-1].pointers[-1].pointers[0].keys, tree.root.pointers[-1].pointers[-1].pointers[1].keys)
-    print(tree.test_find(26).keys, tree.test_find(28).keys, tree.is_pred(tree.test_find(26), tree.test_find(28)))
+    #print(tree.root.pointers[-1].pointers[-1].pointers[0].keys, tree.root.pointers[-1].pointers[-1].pointers[1].keys)
+    #print(tree.test_find(26).keys, tree.test_find(28).keys, tree.is_pred(tree.test_find(26), tree.test_find(28)))
 
-    tree.delete(6, "value6")
-    tree.delete(8, "value8")
+    #tree.delete(6, "value6")
+    #tree.delete(8, "value8")
     #tree.delete(2, "value2")
     #tree.delete(26, "value26") # borrowing!
     
-    tree.insert(26.1, "value26.1")
+    #tree.insert(26.1, "value26.1")
+    #print(f"before: {tree.test_find(25).pointers}, {tree.test_find(28).pointers}")
+    #print(tree.is_pred(tree.test_find(26), tree.test_find(28)))
+
+    #tree.delete(28, "value28")
+    #print(f"after del 28: {tree.test_find(25).pointers}")
+
+    #tree.delete(25, "value25")
+    #tree.print_tree()
     
-    print(tree.is_pred(tree.test_find(26), tree.test_find(28)))
-
-
-    tree.delete(28, "value28")
-    tree.print_tree()
-    
-
+    #print(tree.test_find(25).pointers) # issues!!!!!!
+    #print(tree.test_find(1).pointers)
+    #print(tree.parent(tree.test_find(25)).keys, tree.parent(tree.test_find(25)).pointers)
 
     '''
     tree.insert(12.1, "value12.1")
