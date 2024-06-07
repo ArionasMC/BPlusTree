@@ -6,7 +6,7 @@ class Node:
         # boolean to check if Node is a Leaf Node
         self.is_leaf = is_leaf
         self.keys = []
-        # pointers are children nodes for the non-leaf nodes
+        # pointers are pointers nodes for the non-leaf nodes
         # and records for the leaf nodes except the last
         # one which is the next leaf node
         # in general len(pointers) = len(keys)+1
@@ -161,20 +161,69 @@ class BPlusTree:
         node.keys.remove(key)
         node.pointers.remove(pointer)
 
+        elif_cond = len(node.pointers) < int(math.ceil(self.order/2))
+        if node.is_leaf:
+            elif_cond = len(node.keys) < int(math.ceil((self.order-1)/2))
+
         if node == self.root and len(node.pointers) == 1:
             self.root = node.pointers[0]
             #self.root.parent = None
             del node
-        elif len(node.pointers) < int(math.ceil(self.order/2)):     # check the condtion(does it work for leaves?)
-            pass
+        elif elif_cond:
+            node_t, left_sibling = self.__get_sibling(node)
+            parent = self.parent(node)
+            index = parent.pointers.index(node_t)
+            k_t = parent.keys[index] if left_sibling else parent.keys[index+1]
+            if len(node.keys)+len(node_t.keys) <= self.order-1:
+                # merging 
+                if self.__is_predecessor(node, node_t):
+                    node, node_t = node_t, node
 
+                i = parent.pointers.index(node)
+                i_t = parent.pointers.index(node_t)
+                if not(node.is_leaf):
+                    if i < i_t:
+                        node_t.keys.insert(0, k_t)
+                        node_t.keys = node.keys + node_t.keys
+                        node_t.pointers = node.pointers + node_t.pointers
+                    else:
+                        node_t.keys.append(k_t)
+                        node_t.keys += node.keys
+                        node_t.pointers += node.pointers
+                else:
+                    if i < i_t:
+                        node_t.keys = node.keys + node_t.keys
+                        node_t.pointers = node.pointers[:self.order-1] + node_t.pointers
+                        node_t.pointers.append(node.pointers[-1])
+                    else:
+                        node_t.keys += node.keys
+                        node_t.pointers += node.pointers
+
+                self.__delete_entry(parent, k_t, node)
+                del node
+            else:
+                print("Not implemented yet!")
+
+    def __is_predecessor(self, node, node_t):
+        return node in self.__get_predecessors(node_t)
+        
+    def __get_predecessors(self, node):
+        pre = []
+        parent = self.parent(node)
+        while parent != None:
+            pre.append(parent)
+            parent = self.parent(parent)
+        return pre
+        
+    # Returns a second value: True if sibling is at the left of node otherwise False
     def __get_sibling(self, node):
-        parent = self.__find_parent(node) # we are sure the node is not the root
-        index = parent.children.index(node)
+        parent = self.parent(node) # we are sure the node is not the root
+        print(parent == None, node == None)
+        index = parent.pointers.index(node)
         if index > 0:
-            return parent.children[index-1]
+            return parent.pointers[index-1], True
         else:
-            return parent.children[index+1]
+            return parent.pointers[index+1], False
         
 
     def print_tree(self, debugLeaves = False):
@@ -200,6 +249,11 @@ class BPlusTree:
 tree = BPlusTree(4)
 for i in range(1, 30):
     tree.insert(i, f"value{i}")
-tree.print_tree(debugLeaves=True)
-print()
-print(tree.parent(tree.root.pointers[0].pointers[-1]).keys)
+tree.print_tree(debugLeaves=False)
+
+tree.delete(6, "value6")
+tree.delete(8, "value8")
+tree.print_tree()
+
+#print()
+#print(tree.parent(tree.root.pointers[0].pointers[-1]).keys)
