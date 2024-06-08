@@ -1,4 +1,4 @@
-from bplustree import BPlusTree
+from bplustree import BPlusTree, Node
 
 def print_keys(node):
     print(node.keys)
@@ -7,35 +7,69 @@ def print_keys(node):
             print(n.keys,end=' ')
         print()
 
-tree = BPlusTree(order=4)
-nodes = 11
-for i in range(1, nodes):
-    tree.insert(i, f'value{i}')
-for i in range(1, nodes):
-        print(tree.test_find(i).pointers)
-#tree.delete(12, "value12")
-#tree.delete(9, "value9")
-#tree.insert(4, "value4")
-#for i in range(1, nodes+1):
-#        print(tree.test_find(i).pointers)
-tree.print_tree(showPointers=True)
-print(tree.root.pointers)
+def create_tree(file_name):
+    f = open(file_name, "r")
+    order = int(f.readline())
+    height = int(f.readline())
+    tree = BPlusTree(order)
+    rows = []
+    for i in range(height):
+        nodes = f.readline().split(",")
+        row = []
+        for n in nodes:
+            keys = list(map(int, n.split("|")))
+            node = Node(is_leaf=(i==0))
+            node.keys = keys
+            row.append(node)
+        rows.append(row)
 
-#tree.delete(7, "value7")
-tree.delete(6, "value6")
-tree.print_tree(showPointers=True)
-tree.delete(8, "value8")
-tree.print_tree(showPointers=True)
+    for i in range(height):
+        row = rows[i]
+        if i == 0:
+            for j in range(len(row)):
+                node = row[j]
+                for key in node.keys:
+                    node.pointers.append(f"{key}")
+                if j < len(row)-1:
+                    node.pointers.append(row[j+1])
+        else:
+            offset = 0
+            for j in range(len(row)):
+                node = row[j]
+                for k in range(len(node.keys)+1):
+                    node.pointers.append(rows[i-1][offset+k])
+                offset += len(node.keys)+1
+                    
+    tree.root = rows[-1][0]
+    f.close()
+    return tree
 
-tree.delete(1, "value1")
-tree.print_tree(showPointers=True)
-tree.delete(7, "value7")
-tree.delete(9, "value9")
-tree.print_tree()
-tree.print_tree(showPointers=True)
-#print_keys(tree.root.pointers[0])
-#print_keys(tree.root.pointers[1])
+def run_test(id, in_file, out_file, tests):
+    in_tree = create_tree(in_file)
+    for test in tests:
+        parts = test.split(" ")
+        key = int(parts[1])
+        pointer = f"{key}"
+        if parts[0] == "i":
+            in_tree.insert(key, pointer)
+        elif parts[0] == "d":
+            in_tree.delete(key, pointer)
+    out_tree = create_tree(out_file)
+    eq = str(in_tree) == str(out_tree)
+    msg = "OK" if eq else "NOT OK"
+    print(f"[TESTING] Test {id}: {msg}!")
+    if not(eq):
+        print("in_tree is:")
+        in_tree.print_tree()
+        print("out_tree is:")
+        out_tree.print_tree()
 
-#for i in range(1, nodes):
-#    print(tree.test_find(i).keys, end=' ')
-#print()
+if __name__ == "__main__":
+    tree = "trees/tree.txt"
+    run_test(1, tree, "trees/tree1.txt", ["i 9"])
+    run_test(2, tree, "trees/tree2.txt", ["i 3"])
+    run_test(3, tree, "trees/tree3.txt", ["d 8"])
+    run_test(5, tree, "trees/tree5.txt", ["i 46", "d 52"])
+    run_test(6, tree, "trees/tree6.txt", ["d 91"])
+    run_test(7, tree, "trees/tree7.txt", ["i 59", "d 91"])
+    run_test(8, tree, "trees/tree8.txt", ["d 32","d 39","d 41","d 45","d 73"])
