@@ -29,6 +29,8 @@ class BPlusTree:
         self.root = None
 
     def search(self, key):
+        if key == None or self.root == None:
+            return None
         current_node = self.__find_leaf(key)
         for i, k in enumerate(current_node.keys):
             if k == key:
@@ -338,6 +340,8 @@ class BPlusTree:
 
     # for testing purposes
     def __str__(self):
+        if self.root == None:
+            return "Empty Tree"
         result = ""
         nodes = [(0, self.root)]
         last_level = 0
