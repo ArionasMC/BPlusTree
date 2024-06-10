@@ -1,9 +1,39 @@
 <html>
+    <head>
+        <title>B+ Tree Implementation</title>
+    </head>
+
+    <header>
+        <h1>B+ Tree Implementation by me</h1>
+    </header>
+
     <body>
-        <form action = "http://localhost:5000" method = "get">
-            <p>Enter key to insert in tree</p>
-            <p><input type = "text" name = "insert"/></p>
-            <p><input type = "submit" value = "submit"/></p>
+        <form action = "/" method = "get">
+            <p>Select the order of the B+ Tree</p>
+            <p>
+                <input type="radio" id="2" name="order" value="2">
+                <label for="2">n = 2</label>
+                <input type="radio" id="3" name="order" value="3">
+                <label for="3">n = 3</label>
+                <input type="radio" id="4" name="order" value="4">
+                <label for="4">n = 4</label>
+                <input type="radio" id="5" name="order" value="5">
+                <label for="5">n = 5</label>
+            </p>
+        </form>
+
+        <form action = "/" method = "get">
+            <p>Enter key to insert into tree:</p>
+            <p>
+                <input type = "text" name = "insert"/>
+                <input type = "submit" value = "submit"/>
+            </p>
+
+            <p>Enter key to remove from tree:</p>
+            <p>
+                <input type = "text" name = "delete"/>
+                <input type = "submit" value = "submit"/>
+            </p>
         </form>
 
         <p>Tree:</p>

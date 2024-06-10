@@ -6,15 +6,26 @@ tree = BPlusTree(4)
 
 @app.route('/', methods = ['POST', 'GET'])
 def index():
-    txt = ''
+    ins = ''
+    d = ''
     if request.method == 'POST':
-        txt = str(request.form['insert'])
+        ins = request.form['insert']
+        d = request.form['delete']
     else:
-        txt = str(request.args.get('insert'))
+        ins = request.args.get('insert')
+        d = request.args.get('delete')
     
-    print(f"txt is:{txt}")
-    if tree.search(txt) == None:
+    txt = str(ins)
+    txt_d = str(d)
+    #print(f"ins is:{ins}")
+    
+    # Process input submission
+    if tree.search(txt) == None and txt != '' and ins != None:
         tree.insert(txt, txt)
+
+    # Process delete submission
+    if tree.search(txt_d) != None and txt_d != '' and d != None:
+        tree.delete(txt_d, txt_d)
     
     return render_template('index.html', tree_str = str(tree).split('\n'))
 

@@ -50,6 +50,10 @@ class BPlusTree:
         return current_node
 
     def insert(self, key, pointer):
+        if key == None or pointer == None:
+            print('Inserting None?')
+            return
+        
         leaf = None
         if self.root == None:
             self.root = Node(is_leaf=True)
