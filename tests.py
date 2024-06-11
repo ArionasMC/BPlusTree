@@ -73,3 +73,8 @@ if __name__ == "__main__":
     run_test(6, tree, "trees/tree6.txt", ["d 91"])
     run_test(7, tree, "trees/tree7.txt", ["i 59", "d 91"])
     run_test(8, tree, "trees/tree8.txt", ["d 32","d 39","d 41","d 45","d 73"])
+
+    test_tree = create_tree("trees/tree.txt")
+    print(test_tree.getDictTree())
+    test_tree.print_tree()
+    print(test_tree.getLevelSizes())

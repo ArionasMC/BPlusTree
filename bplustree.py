@@ -19,6 +19,11 @@ class Node:
         self.keys = []
         self.pointers = []
 
+    def getDict(self):
+        if self.is_leaf:
+            return {'keys': self.keys, 'children': [], 'is_leaf': True}
+        return {'keys': self.keys, 'children': [n.getDict() for n in self.pointers], 'is_leaf': False}
+
     def __repr__(self):
         return f"Node({self.keys})"
 
@@ -358,3 +363,22 @@ class BPlusTree:
                 nodes += [(level+1, node.pointers[i]) for i in range(len(node.pointers))]
             last_level = level
         return result
+    
+    # ----- Methods for frontend -----
+    def getDictTree(self):
+        return {'root': self.root.getDict()}
+    
+    def getLevelSizes(self):
+        levels = {0:1}
+        nodes = [(0,self.root)]
+        while len(nodes) != 0:
+            (level, cur) = nodes.pop()
+            
+            if not(level+1 in levels.keys()): 
+                levels[level+1] = 0
+            
+            levels[level+1] += len(cur.pointers)
+            if not(cur.is_leaf):
+                nodes+=[(level+1, p) for p in cur.pointers]
+            
+        return [levels[key] for key in levels.keys()][:-1]

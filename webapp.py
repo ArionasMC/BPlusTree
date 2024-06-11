@@ -1,10 +1,31 @@
 from flask import Flask, redirect, url_for, request, render_template
 from bplustree import BPlusTree
+from tests import create_tree
 app = Flask(__name__)
 
 tree = BPlusTree(4)
 
-@app.route('/', methods = ['POST', 'GET'])
+test_tree = create_tree("trees/tree.txt")
+
+@app.route('/')
+def test():
+    # Example tree data to be passed to the template
+    '''
+    tree_data = {
+        'root': {
+            'keys': [10, 20],
+            'children': [
+                {'keys': [5], 'children': [], 'is_leaf': True},
+                {'keys': [15], 'children': [], 'is_leaf': True},
+                {'keys': [25], 'children': [], 'is_leaf': True}
+            ],
+            'is_leaf': False
+        }
+    }
+    '''
+    return render_template('test.html', tree_data=test_tree.getDictTree(), tree_levels=test_tree.getLevelSizes())
+
+@app.route('/index', methods = ['POST', 'GET'])
 def index():
     ins = ''
     d = ''
