@@ -5,46 +5,118 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>B+ Tree Visualization</title>
     <style>
-        .node {
-            border: 1px solid #000;
-            display: inline-block;
-            padding: 10px;
-            margin: 10px;
-            background-color: #e0e0e0;
-            text-align: center;
-        }
-        .canvas-container {
-            position: relative;
-            width: 100%;
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
             height: 100vh;
+            overflow: hidden;  /* Prevent whole page from scrolling */
+        }
+        .header {
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 10px;
+            background-color: #CE5A67;
+            border-bottom: 2px solid #1F1717;
+            color: #FCF5ED;
+        }
+        .footer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /*padding: px;*/
+            background-color: #CE5A67;
+            border-top: 2px solid #1F1717;
+            color: #FCF5ED;
+        }
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: auto;  /* Enable scrolling within the container */
+        }
+        .node {
+            border: 2px solid #1F1717;
+            border-radius: 15%;
+            display: flex;             /* Use flexbox for centering */
+            justify-content: center;   /* Center horizontally */
+            align-items: center;       /* Center vertically */
+            background-color: #F4BF96;
+            text-align: center;
+
+            position: absolute;
         }
         canvas {
             position: absolute;
             top: 0;
             left: 0;
+            background-color: #FCF5ED;
+        }
+
+        input[type=text] {
+            border: 2px solid #1F1717;
+            border-radius: 5%;
+            background-color: #FCF5ED;
+            color: #1F1717;
+        }
+
+        input[type=submit] {
+            border: 2px solid #1F1717;
+            background-color: #F4BF96;
+        }
+
+        input[type=submit]:hover {
+            border: 2px solid #1F1717;
+            background-color: #FCF5ED;
         }
     </style>
 </head>
 <body>
+    <div class="header">
+        <form action = "/" method = "get">
+            <p>Enter key to insert into tree:</p>
+            <p>
+                <input type = "text" name = "insert"/>
+                <input type = "submit" value = "submit"/>
+            </p>
+
+            <p>Enter key to remove from tree:</p>
+            <p>
+                <input type = "text" name = "delete"/>
+                <input type = "submit" value = "submit"/>
+            </p>
+        </form>
+    </div>
     <div class="canvas-container">
         <canvas id="treeCanvas"></canvas>
         <div id="treeContainer"></div>
     </div>
+    <div class="footer">
+        <p>Footer</p>
+    </div>
     <script>
         const treeData = {{tree_data|tojson}};
-        const treeLevelSizes = {{tree_levels}};
 
         function drawTree(treeData) {
             const treeContainer = document.getElementById('treeContainer');
             treeContainer.innerHTML = '';  // Clear previous content
 
-            const nodeWidth = 60;
-            const nodeHeight = 40;
+            const nodeWidth = 80;
+            const nodeHeight = 50;
             const horizontalSpacing = 40;
             const verticalSpacing = 50;
+
+            const offsetY = 20;
+
+            function calculateSubtreeWidth(node) {
+                if (node.is_leaf) {
+                    return nodeWidth;
+                }
+                return node.children.reduce((total, child) => total + calculateSubtreeWidth(child), 0) + (node.children.length - 1) * horizontalSpacing;
+            }
 
             function createNodeElement(keys) {
                 const node = document.createElement('div');
@@ -55,38 +127,76 @@
                 return node;
             }
 
-            function renderNode(node, parentElement, level = 0, position = 0, parentX = null, parentY = null) {
+            function renderNode(node, parentElement, level = 0, offsetX = 0, parentX = null, parentY = null) {
                 console.log("rendering a node");
                 const nodeElement = createNodeElement(node.keys);
                 parentElement.appendChild(nodeElement);
 
-                const nodeX = position * (nodeWidth + horizontalSpacing);
-                const nodeY = level * (nodeHeight + verticalSpacing);
+                const subtreeWidth = calculateSubtreeWidth(node);
+                const nodeX = offsetX + subtreeWidth / 2 - nodeWidth / 2;
+                const nodeY = level * (nodeHeight + verticalSpacing) + offsetY;
                 nodeElement.style.position = 'absolute';
                 nodeElement.style.left = nodeX + 'px';
                 nodeElement.style.top = nodeY + 'px';
 
                 if (!node.is_leaf) {
-                    node.children.forEach((child, index) => {
-                        renderNode(child, parentElement, level + 1, position * node.children.length + index, nodeX + nodeWidth / 2, nodeY + nodeHeight);
+                    let childOffsetX = offsetX;
+                    node.children.forEach((child) => {
+                        const childSubtreeWidth = calculateSubtreeWidth(child);
+                        renderNode(child, parentElement, level + 1, childOffsetX, nodeX + nodeWidth / 2, nodeY + nodeHeight);
+                        childOffsetX += childSubtreeWidth + horizontalSpacing;
                     });
                 }
 
                 if (parentX !== null && parentY !== null) {
-                    drawArrow(parentX, parentY, nodeX + nodeWidth / 2, nodeY + nodeHeight / 2);
+                    drawArrow(parentX, parentY, nodeX + nodeWidth / 2, nodeY /*+ nodeHeight / 2*/);
                 }
             }
 
-            renderNode(treeData.root, treeContainer);
+            const canvas = document.getElementById('treeCanvas');
+            const ctx = canvas.getContext('2d');
+            const rootSubtreeWidth = calculateSubtreeWidth(treeData.root);
+
+            // Set canvas width and height based on the content
+            const treeHeight = (calculateMaxLevel(treeData.root) + 1) * (nodeHeight + verticalSpacing);
+            const treeWidth = rootSubtreeWidth;
+
+            canvas.width = Math.max(window.innerWidth, treeWidth);
+            canvas.height = Math.max(window.innerHeight, treeHeight);
+
+            const startX = (canvas.width - rootSubtreeWidth) / 2;
+
+            renderNode(treeData.root, treeContainer, 0, startX);
+
+            //renderNode(treeData.root, treeContainer);
         }
 
         function drawArrow(fromX, fromY, toX, toY) {
             const canvas = document.getElementById('treeCanvas');
             const ctx = canvas.getContext('2d');
+            const headlen = 10;  // length of head in pixels
+            const angle = Math.atan2(toY - fromY, toX - fromX);
+
             ctx.beginPath();
             ctx.moveTo(fromX, fromY);
             ctx.lineTo(toX, toY);
             ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(toX - headlen * Math.cos(angle + Math.PI / 6), toY - headlen * Math.sin(angle + Math.PI / 6));
+            ctx.lineTo(toX, toY);
+            ctx.lineTo(toX - headlen * Math.cos(angle - Math.PI / 6), toY - headlen * Math.sin(angle - Math.PI / 6));
+            ctx.stroke();
+            ctx.fill();
+        }
+
+        function calculateMaxLevel(node, level = 0) {
+            if (node.is_leaf) {
+                return level;
+            }
+            return Math.max(...node.children.map(child => calculateMaxLevel(child, level + 1)));
         }
 
         function initializeCanvas() {

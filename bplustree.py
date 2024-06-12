@@ -366,6 +366,8 @@ class BPlusTree:
     
     # ----- Methods for frontend -----
     def getDictTree(self):
+        if self.root == None:
+            return {'root': {}}
         return {'root': self.root.getDict()}
     
     def getLevelSizes(self):
