@@ -2,7 +2,8 @@ from flask import Flask, redirect, url_for, request, render_template
 from bplustree import BPlusTree
 app = Flask(__name__)
 
-tree = None
+# Default tree
+tree = BPlusTree(4) 
 ttype = True # True for numeric, False for string
 
 @app.route('/tree', methods = ['POST', 'GET'])
@@ -12,21 +13,35 @@ def tree_page():
     if request.method == 'POST':
         ins = request.form['insert']
         d = request.form['delete']
-    else:
-        ins = request.args.get('insert')
-        d = request.args.get('delete')
-    
-    txt = str(ins)
-    txt_d = str(d)
-    #print(f"ins is:{ins}")
-    
-    # Process input submission
-    if tree.search(txt) == None and txt != '' and ins != None:
-        tree.insert(txt, txt)
 
-    # Process delete submission
-    if tree.search(txt_d) != None and txt_d != '' and d != None:
-        tree.delete(txt_d, txt_d)
+        if str(ins) != '' and ins != None:
+            if ttype:
+                if ins.isdigit():
+                    insert_key = int(ins)
+                else:
+                    return render_template('tree.html', tree_data=tree.getDictTree())
+            else:
+                insert_key = str(ins)
+
+            # Process input submission
+            if tree.search(insert_key) == None:
+                tree.insert(insert_key, str(ins))
+
+        if str(d) != '' and d != None:
+            if ttype:
+                if d.isdigit():
+                    delete_key = int(d)
+                else:
+                    return render_template('tree.html', tree_data=tree.getDictTree())
+            else:
+                delete_key = str(d)
+
+            # Process delete submission
+            if tree.search(delete_key) != None:
+                print(str(d), tree.test_find(delete_key).pointers)
+
+                tree.delete(delete_key, str(d))
+
     return render_template('tree.html', tree_data=tree.getDictTree())
 
 @app.route('/', methods = ['POST', 'GET'])

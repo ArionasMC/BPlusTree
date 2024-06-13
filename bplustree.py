@@ -71,9 +71,12 @@ class BPlusTree:
         else:
             leaf_t = Node(is_leaf=True)
             temp = self.__get_copy_temp(leaf)
+            #print(f"before temp: {temp}:{temp.pointers}")
             self.__insert_in_leaf(temp, key, pointer)
+            #print(f"after temp: {temp}:{temp.pointers}")
 
-            leaf_t.pointers.append(leaf.pointers[-1])
+            if(leaf.pointers[-1] is Node): 
+                leaf_t.pointers.append(leaf.pointers[-1])
             leaf.pointers = [leaf_t]
             leaf.keys.clear()
 
@@ -86,12 +89,15 @@ class BPlusTree:
             #leaf_t.pointers = temp.pointers[border:]+leaf_t.pointers # reversed pointers!!!
 
             k_t = leaf_t.keys[0] 
+            #print(f"leaf={leaf}:{leaf.pointers}, leaf_t={leaf_t}:{leaf_t.pointers}")
             self.__insert_in_parent(leaf, k_t, leaf_t)
 
 
     def __get_copy_temp(self, node, full=False):
         temp = Node(is_leaf= node.is_leaf)
         c = 0 if full else 1
+        if self.__is_right_edge(node):
+            c = 0
         temp.keys = node.keys[:]
         temp.pointers = node.pointers[:len(node.pointers)-c]
         return temp
@@ -182,9 +188,10 @@ class BPlusTree:
             self.__add_last_merge_pointer(node_t, node.pointers[-1])
 
         else:
-            self.__merge_leaf_nodes(node_t, node)
-            node_t.pointers[-1] = node.pointers[-1]
-            
+            if len(node.keys) > 0:
+                self.__merge_leaf_nodes(node_t, node)
+                node_t.pointers[-1] = node.pointers[-1]
+                
             # for right edge because there is no pointer, not even None we have to fix this
             if self.__is_right_edge(node):
                 node_t.pointers.pop()
@@ -199,6 +206,7 @@ class BPlusTree:
     def __merge_leaf_nodes(self, node_t, node):
         index = 0
         while index < len(node_t.keys):
+            #print(f"testing merge leaf: {node}:{node.pointers}")
             if node_t.keys[index] > node.keys[0]:
                 break
             index+=1
@@ -225,6 +233,9 @@ class BPlusTree:
                 return i
             i+=1
         node.keys.append(key)
+        #if node.is_leaf and not(self.__is_right_edge(node)):
+        #    node.pointers.insert(len(node.pointers)-1, pointer)
+        #else:
         node.pointers.append(pointer)
         return i
 
@@ -234,6 +245,9 @@ class BPlusTree:
 
         # Extra case if root is a leaf
         if self.root == node and self.root.is_leaf:
+            if len(self.root.keys) == 0:
+                del node
+                self.root = None
             return
 
         elif_cond = len(node.pointers) < int(math.ceil(self.order/2))
@@ -328,6 +342,9 @@ class BPlusTree:
             return parent.pointers[index+1]
 
     def print_tree(self, debugLeaves = False, showPointers = False):
+        if self.root == None:
+            print("Empty Tree")
+            return
         nodes = [(0, self.root)]
         leaves = []
         print("=====[Tree]=====")

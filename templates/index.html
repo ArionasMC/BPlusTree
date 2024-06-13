@@ -6,11 +6,16 @@
     <title>B+ Tree Visualization</title>
     <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet"/>
     <link href="{{ url_for('static', filename='index_style.css') }}" rel="stylesheet"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 </head>
 <body>
     <div class="header">
         <h1>Welcome to B+ Tree Visualization</h1>
+        <div class="github_div">
+            <a href="https://github.com/ArionasMC/BPlusTree" class="github_button" target="_blank">
+                <i class="fa fa-github"></i> View on GitHub
+            </a>
+        </div>
     </div>
     <div class="main-body">
         <form id="treeForm" method="POST" action="/">
@@ -21,8 +26,8 @@
             <div class="form-group">
                 <label for="treeType">Tree keys type:</label>
                 <select id="treeType" name="treeType" required>
-                    <option value="numeric">Numeric</option>
-                    <option value="string">String</option>
+                    <option value="numeric">Int</option>
+                    <option value="string">Other(considered as string)</option>
                 </select>
             </div>
             <button type="submit">Submit</button>

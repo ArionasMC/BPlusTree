@@ -65,8 +65,8 @@ button:hover {
     color: #1F1717;
 }
 
-footer {
-    text-align: center;
-    padding: 10px;
-    background-color: #f5f5f5;
+.github_div {
+    position: fixed;
+    left: 10px;
+    top: 25px;
 }
