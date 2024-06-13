@@ -228,10 +228,13 @@ class BPlusTree:
         node.pointers.append(pointer)
         return i
 
-
     def __delete_entry(self, node, key, pointer):
         node.keys.remove(key)
         node.pointers.remove(pointer)
+
+        # Extra case if root is a leaf
+        if self.root == node and self.root.is_leaf:
+            return
 
         elif_cond = len(node.pointers) < int(math.ceil(self.order/2))
         if node.is_leaf:
