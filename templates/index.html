@@ -1,44 +1,35 @@
-<html>
-    <head>
-        <title>B+ Tree Implementation</title>
-    </head>
-
-    <header>
-        <h1>B+ Tree Implementation by me</h1>
-    </header>
-
-    <body>
-        <form action = "/" method = "get">
-            <p>Select the order of the B+ Tree</p>
-            <p>
-                <input type="radio" id="2" name="order" value="2">
-                <label for="2">n = 2</label>
-                <input type="radio" id="3" name="order" value="3">
-                <label for="3">n = 3</label>
-                <input type="radio" id="4" name="order" value="4">
-                <label for="4">n = 4</label>
-                <input type="radio" id="5" name="order" value="5">
-                <label for="5">n = 5</label>
-            </p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B+ Tree Visualization</title>
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet"/>
+    <link href="{{ url_for('static', filename='index_style.css') }}" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="header">
+        <h1>Welcome to B+ Tree Visualization</h1>
+    </div>
+    <div class="main-body">
+        <form id="treeForm" method="POST" action="/">
+            <div class="form-group">
+                <label for="treeOrder">Tree order:</label>
+                <input type="number" id="treeOrder" name="treeOrder" min="3" value="3" required>
+            </div>
+            <div class="form-group">
+                <label for="treeType">Tree keys type:</label>
+                <select id="treeType" name="treeType" required>
+                    <option value="numeric">Numeric</option>
+                    <option value="string">String</option>
+                </select>
+            </div>
+            <button type="submit">Submit</button>
         </form>
-
-        <form action = "/" method = "get">
-            <p>Enter key to insert into tree:</p>
-            <p>
-                <input type = "text" name = "insert"/>
-                <input type = "submit" value = "submit"/>
-            </p>
-
-            <p>Enter key to remove from tree:</p>
-            <p>
-                <input type = "text" name = "delete"/>
-                <input type = "submit" value = "submit"/>
-            </p>
-        </form>
-
-        <p>Tree:</p>
-        {% for para in tree_str %}
-            <p>{{para}}</p>
-        {% endfor %}
-   </body>
+    </div>
+    <div class="index_footer">
+        <p>Made by Nikolas Spyropoulos, 2024</p>
+    </div>
+</body>
 </html>
